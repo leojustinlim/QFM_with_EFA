@@ -1,0 +1,882 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>QFM Tender Evaluation Calculator</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Newsreader:ital,wght@0,500;0,600;1,500&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#F4F5F1;
+    --surface:#FFFFFF;
+    --surface-alt:#ECEEE9;
+    --ink:#16211C;
+    --ink-2:#4B5A52;
+    --ink-3:#7C8A81;
+    --line:#D6DBD2;
+    --line-strong:#B9C2B4;
+    --accent:#14524A;
+    --accent-strong:#0B332E;
+    --accent-soft:#DCEAE6;
+    --accent-soft-ink:#0F3E38;
+    --gold:#9A6B22;
+    --gold-soft:#F3E7D0;
+    --red:#8F2E22;
+    --red-soft:#F6E2DE;
+    --amber:#8A5A14;
+    --amber-soft:#F3E6CE;
+    --radius:6px;
+    --font-head:'Newsreader', serif;
+    --font-body:'IBM Plex Sans', sans-serif;
+    --font-mono:'IBM Plex Mono', monospace;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0; background:var(--bg); color:var(--ink);
+    font-family:var(--font-body); font-size:14px; line-height:1.55;
+    -webkit-font-smoothing:antialiased;
+  }
+  .app{max-width:1180px; margin:0 auto; padding:32px 24px 120px;}
+  header.top{
+    display:flex; align-items:flex-start; justify-content:space-between;
+    border-bottom:2px solid var(--accent); padding-bottom:16px; margin-bottom:28px;
+    flex-wrap:wrap; gap:8px;
+  }
+  header.top h1{
+    font-family:var(--font-head); font-weight:600; font-style:italic;
+    font-size:30px; margin:0; color:var(--accent-strong);
+  }
+  header.top .tag{
+    font-family:var(--font-mono); font-size:11px; letter-spacing:.04em;
+    color:var(--ink-3); text-transform:uppercase;
+  }
+  .panel{
+    background:var(--surface); border:1px solid var(--line);
+    border-radius:var(--radius); padding:22px 24px; margin-bottom:20px;
+  }
+  .panel h2{
+    font-family:var(--font-head); font-weight:600; font-size:18px;
+    margin:0 0 4px; color:var(--accent-strong);
+  }
+  .panel .sub{color:var(--ink-2); font-size:12.5px; margin:0 0 16px;}
+  .step-label{
+    display:inline-flex; align-items:center; gap:6px; font-family:var(--font-mono);
+    font-size:10.5px; letter-spacing:.06em; color:var(--accent); text-transform:uppercase;
+    margin-bottom:6px;
+  }
+  .step-label::before{content:''; width:6px; height:6px; background:var(--accent); border-radius:50%; display:inline-block;}
+
+  .grid{display:grid; gap:16px; align-items:start;}
+  .grid.cols-2{grid-template-columns:1fr 1fr;}
+  .grid.cols-3{grid-template-columns:1fr 1fr 1fr;}
+  .grid.cols-4{grid-template-columns:1fr 1fr 1fr 1fr;}
+  @media (max-width:760px){
+    .grid.cols-2, .grid.cols-3, .grid.cols-4{grid-template-columns:1fr;}
+    .app{padding:20px 14px 100px;}
+    .panel{padding:16px 14px;}
+  }
+
+  label{display:block; font-size:12px; font-weight:500; color:var(--ink-2); margin-bottom:5px;}
+  .hint{font-size:11.5px; color:var(--ink-3); margin-top:4px;}
+  input[type=text], input[type=number], select{
+    width:100%; padding:9px 10px; border:1px solid var(--line-strong);
+    border-radius:4px; background:var(--surface); color:var(--ink);
+    font-family:var(--font-body); font-size:13.5px;
+  }
+  input[type=number]{font-family:var(--font-mono);}
+  input:focus, select:focus{outline:2px solid var(--accent); outline-offset:1px;}
+  input[readonly]{background:var(--surface-alt); color:var(--ink-2);}
+
+  .banner{
+    display:flex; align-items:center; gap:10px; padding:11px 14px;
+    background:var(--accent-soft); color:var(--accent-soft-ink); border-radius:4px;
+    font-size:13px; margin-top:14px; border:1px solid #BFDAD2;
+  }
+  .banner strong{font-weight:600;}
+  .banner .dot{width:7px; height:7px; border-radius:50%; background:var(--accent); flex:none;}
+
+  .table-scroll{overflow-x:auto; -webkit-overflow-scrolling:touch;}
+  table{width:100%; min-width:560px; border-collapse:collapse; font-size:13px;}
+  th{
+    text-align:left; font-family:var(--font-mono); font-size:10.5px; letter-spacing:.04em;
+    text-transform:uppercase; color:var(--ink-3); font-weight:500;
+    border-bottom:1px solid var(--line-strong); padding:8px 8px;
+  }
+  td{padding:6px 8px; border-bottom:1px solid var(--line); vertical-align:middle;}
+  td input, td select{padding:6px 8px; font-size:13px;}
+  .num{font-family:var(--font-mono); text-align:right;}
+  .col-name input{font-weight:500;}
+  .row-remove{
+    background:none; border:none; color:var(--ink-3); cursor:pointer; font-size:16px;
+    line-height:1; padding:4px 6px; border-radius:4px;
+  }
+
+  .btn{
+    font-family:var(--font-body); font-size:13px; font-weight:500; padding:9px 16px;
+    border-radius:4px; border:1px solid var(--line-strong); background:var(--surface);
+    color:var(--ink); cursor:pointer; -webkit-tap-highlight-color:transparent;
+  }
+  .btn.primary{background:var(--accent); color:#fff; border-color:var(--accent);}
+  .btn.ghost{border-color:transparent; background:transparent; color:var(--accent);}
+  .btn-row{display:flex; gap:10px; margin-top:14px; flex-wrap:wrap;}
+
+  /* Hover styles only apply on devices with a real pointer (mouse/trackpad) —
+     touch devices don't get a hover-out event, so these would otherwise get stuck "on" after a tap. */
+  @media (hover:hover) and (pointer:fine){
+    tr:hover td{background:var(--surface-alt);}
+    .row-remove:hover{color:var(--red); background:var(--red-soft);}
+    .btn:hover{border-color:var(--accent); color:var(--accent-strong);}
+    .btn.primary:hover{background:var(--accent-strong); border-color:var(--accent-strong);}
+    .btn.ghost:hover{background:var(--accent-soft);}
+  }
+
+  .badge{
+    display:inline-block; font-family:var(--font-mono); font-size:10.5px;
+    padding:2px 8px; border-radius:99px; letter-spacing:.03em;
+  }
+  .badge.win{background:var(--gold-soft); color:var(--gold);}
+  .badge.eff{background:var(--accent-soft); color:var(--accent-soft-ink);}
+  .badge.dq{background:var(--red-soft); color:var(--red);}
+  .badge.neutral{background:var(--surface-alt); color:var(--ink-3);}
+
+  .results-row.winner td{background:var(--gold-soft);}
+  .results-row.dq td{color:var(--ink-3);}
+
+  .empty{
+    text-align:center; padding:26px 10px; color:var(--ink-3); font-size:13px;
+    border:1px dashed var(--line-strong); border-radius:6px;
+  }
+
+  .chart-wrap{display:flex; gap:24px; flex-wrap:wrap;}
+  .chart-svg-holder{flex:1 1 480px; min-width:320px;}
+  .commentary{flex:1 1 360px; min-width:280px;}
+  .commentary h3{font-size:13px; font-weight:600; margin:0 0 10px; color:var(--accent-strong);}
+  .comment-item{
+    padding:10px 12px; border:1px solid var(--line); border-radius:5px;
+    margin-bottom:8px; font-size:12.5px; line-height:1.55;
+  }
+  .comment-item.steep{border-left:3px solid var(--amber); background:var(--amber-soft);}
+  .comment-item.value{border-left:3px solid var(--accent); background:var(--accent-soft);}
+  .comment-item.dominated{border-left:3px solid var(--ink-3); color:var(--ink-2);}
+  .comment-item .figure{font-family:var(--font-mono); font-weight:500; color:var(--ink);}
+
+  .export-bar{
+    position:sticky; bottom:0; margin-top:8px; padding:14px 24px;
+    background:var(--surface); border:1px solid var(--line); border-radius:var(--radius);
+    display:flex; gap:10px; align-items:center; justify-content:space-between; flex-wrap:wrap;
+  }
+  .export-bar .note{font-size:11.5px; color:var(--ink-3);}
+
+  .helper-toggle{font-size:12px; color:var(--accent); cursor:pointer; background:none; border:none; padding:0; text-decoration:underline;}
+
+  @media print{
+    body{background:#fff;}
+    .export-bar, .row-remove, .btn-row, .helper-toggle{display:none !important;}
+    input, select{border:none !important; background:none !important; padding:2px 0 !important;}
+    .panel{border:none; padding:0 0 18px; margin-bottom:14px; page-break-inside:avoid;}
+    header.top{border-bottom:2px solid #000;}
+  }
+</style>
+</head>
+<body>
+<div class="app">
+
+  <header class="top">
+    <div>
+      <h1>QFM Tender Evaluation Calculator</h1>
+    </div>
+  </header>
+
+  <!-- STEP 1: PROJECT SETUP -->
+  <section class="panel" id="panel-setup">
+    <div class="step-label">Step 1</div>
+    <h2>Background</h2>
+    <p class="sub">Enter the tender's basic parameters. The fee-scoring method is chosen for you.</p>
+
+    <div class="grid cols-3">
+      <div>
+        <label for="in-cost">Estimated construction cost (S$)</label>
+        <input type="number" id="in-cost" min="0" step="1000" placeholder="e.g. 45000000">
+      </div>
+      <div>
+        <label for="in-standalone">Tender type</label>
+        <select id="in-standalone">
+          <option value="">Select…</option>
+          <option value="no">Standard consultancy (leads to construction)</option>
+          <option value="yes">Standalone / cost not yet determined</option>
+        </select>
+      </div>
+      <div>
+        <label for="in-stage">Tender structure</label>
+        <select id="in-stage">
+          <option value="">Select…</option>
+          <option value="1">1-stage QFM</option>
+          <option value="2">2-stage QFM</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="grid cols-3" style="margin-top:16px;">
+      <div>
+        <label for="in-weightage">Quality : Fee weightage</label>
+        <select id="in-weightage">
+          <option value="">Select…</option>
+          <option value="80,20">80 : 20</option>
+          <option value="70,30">70 : 30</option>
+          <option value="90,10">90 : 10</option>
+          <option value="custom">Custom…</option>
+        </select>
+      </div>
+      <div id="custom-weightage-wrap" style="display:none;">
+        <label for="in-quality-custom">Quality weightage (points)</label>
+        <input type="number" id="in-quality-custom" min="10" max="95" placeholder="e.g. 80">
+      </div>
+    </div>
+
+    <div class="banner" id="method-banner">
+      <span class="dot"></span>
+      <span id="method-banner-text">Enter the estimated construction cost to determine the fee-scoring method.</span>
+    </div>
+  </section>
+
+  <!-- STEP 2: TENDERER ENTRY -->
+  <section class="panel" id="panel-tenderers">
+    <div class="step-label">Step 2</div>
+    <h2>Submitted Tender Bids</h2>
+    <p class="sub">One row per tenderer (a Multi-Disciplinary Team counts as one row — enter its fee and quality score).</p>
+
+    <div class="table-scroll">
+    <table id="tenderer-table">
+      <thead>
+        <tr>
+          <th style="width:26%">Tenderer/MDT name</th>
+          <th style="width:22%">Quality points (raw)</th>
+          <th style="width:20%">Proposed fee (S$)</th>
+          <th style="width:14%">Conforming</th>
+          <th style="width:6%"></th>
+        </tr>
+      </thead>
+      <tbody id="tenderer-tbody"></tbody>
+    </table>
+    </div>
+    <p class="hint" style="margin-top:8px;">Enter each tenderer's total raw quality score on a consistent scale, as assessed by the evaluation team — this should already reflect Consultant Performance (CPAS) and all other quality attributes combined. The calculator normalises the highest scorer to the full quality weightage and scales the rest proportionally to produce each tenderer's Q-score.</p>
+
+    <div class="btn-row">
+      <button class="btn" id="btn-add-row">+ Add tenderer</button>
+      <button class="btn ghost helper-toggle" id="btn-add-sample">Load sample data</button>
+      <button class="btn ghost helper-toggle" id="btn-clear-all" style="color:var(--red);">Clear all data</button>
+    </div>
+  </section>
+
+  <!-- STEP 3: RESULTS -->
+  <section class="panel" id="panel-results">
+    <div class="step-label">Step 3</div>
+    <h2>QFM Result</h2>
+    <p class="sub">Updates automatically as you enter tenderer data.</p>
+    <div id="results-holder" class="table-scroll"><div class="empty">Add at least one conforming tenderer with a fee and quality score to see results.</div></div>
+  </section>
+
+  <!-- STEP 4: EFFICIENT FRONTIER -->
+  <section class="panel" id="panel-frontier">
+    <div class="step-label">Step 4</div>
+    <h2>Efficient Frontier Analysis</h2>
+    <p class="sub">Fee versus Q-score across tender bids. This is a supplementary value-for-money view — the QFM score above remains the basis for award.</p>
+    <div id="frontier-holder"><div class="empty">Frontier chart appears once at least two conforming tenderers have scores.</div></div>
+  </section>
+
+  <div class="export-bar">
+    <span class="note">Report reflects data as entered. Verify against the current BCA circular before final submission.</span>
+    <div style="display:flex; gap:10px;">
+      <button class="btn" id="btn-export-csv">Download CSV</button>
+      <button class="btn primary" id="btn-print">Generate print report</button>
+    </div>
+  </div>
+
+</div>
+
+<script>
+(function(){
+  "use strict";
+
+  // ---------- STATE ----------
+  var state = {
+    project: { cost: null, standalone: '', stage: '', qualityWeightage: null, feeWeightage: null },
+    tenderers: []
+  };
+  var rowSeq = 0;
+
+  function newTenderer(name){
+    rowSeq += 1;
+    return { id: 'T' + rowSeq, name: name || '', otherQuality: '', fee: '', conforming: true };
+  }
+
+  // ---------- PERSISTENCE ----------
+  function save(){
+    try{ localStorage.setItem('qfm_calc_state', JSON.stringify(state)); }catch(e){}
+  }
+  function load(){
+    try{
+      var raw = localStorage.getItem('qfm_calc_state');
+      if(raw){
+        var parsed = JSON.parse(raw);
+        if(parsed && parsed.project && parsed.tenderers){ state = parsed; }
+      }
+    }catch(e){}
+  }
+
+  // ---------- CALCULATION ENGINE ----------
+  function determineMethod(){
+    var cost = Number(state.project.cost);
+    var standalone = state.project.standalone === 'yes';
+    if(standalone || !cost || cost <= 0) return { method:'A', reason: standalone ? 'standalone consultancy service / cost not yet determined' : 'no cost entered' };
+    if(cost <= 100000000) return { method:'B', reason: 'estimated cost of S$' + fmtMoney(cost) + ' is 100M or below' };
+    return { method:'A', reason: 'estimated cost of S$' + fmtMoney(cost) + ' exceeds 100M' };
+  }
+
+  function conformingTenderers(){
+    return state.tenderers.filter(function(t){
+      return t.conforming && t.fee !== '' && !isNaN(Number(t.fee)) && Number(t.fee) > 0;
+    });
+  }
+
+  function computeQualityScores(list){
+    var qW = Number(state.project.qualityWeightage) || 0;
+    var rawScores = list.map(function(t){ return t.otherQuality === '' ? 0 : Number(t.otherQuality); });
+    var maxRaw = Math.max.apply(null, rawScores.concat([0]));
+    var result = {};
+    list.forEach(function(t, i){
+      var qScore = maxRaw > 0 ? (rawScores[i] / maxRaw) * qW : 0;
+      result[t.id] = { raw: rawScores[i], total: qScore };
+    });
+    return result;
+  }
+
+  function computeFeeScoresA(list){
+    var feeW = Number(state.project.feeWeightage) || 0;
+    var fees = list.map(function(t){ return Number(t.fee); });
+    var working = fees.slice();
+    var n = fees.length;
+    var reverted = false;
+    var excludedCount = 0;
+    for(var iter=0; iter<10; iter++){
+      var avg = working.reduce(function(a,b){return a+b;},0) / working.length;
+      var keep = working.filter(function(f){ return f <= 1.5*avg && f >= 0.8*avg; });
+      var removed = working.length - keep.length;
+      if(removed === 0){ break; }
+      excludedCount += removed;
+      if(excludedCount >= Math.floor(n/2)){ reverted = true; break; }
+      working = keep;
+      if(working.length === 0){ working = fees.slice(); reverted = true; break; }
+    }
+    var adjAvg = reverted ? (fees.reduce(function(a,b){return a+b;},0)/fees.length) : (working.reduce(function(a,b){return a+b;},0)/working.length);
+    var lowestFee = Math.min.apply(null, fees);
+    var scenario = lowestFee >= 0.8*adjAvg ? 'A' : 'B';
+    var threshold = 0.8*adjAvg;
+    var result = {};
+    list.forEach(function(t){
+      var fee = Number(t.fee);
+      var f;
+      if(scenario === 'A'){
+        f = (lowestFee/fee) * feeW;
+      } else {
+        f = fee <= threshold ? feeW : (threshold/fee) * feeW;
+      }
+      f = Math.max(0, Math.min(feeW, f));
+      result[t.id] = { score: f, disqualified: false, note: null };
+    });
+    return { scores: result, meta: { adjAvg: adjAvg, scenario: scenario, reverted: reverted } };
+  }
+
+  function median(arr){
+    var s = arr.slice().sort(function(a,b){return a-b;});
+    var mid = Math.floor(s.length/2);
+    return s.length % 2 !== 0 ? s[mid] : (s[mid-1]+s[mid])/2;
+  }
+
+  function computeFeeScoresB(list, qualityScores){
+    var feeW = Number(state.project.feeWeightage) || 0;
+    var fees = list.map(function(t){ return Number(t.fee); });
+    var med = median(fees);
+    var n = list.length;
+    var highestQualityId = null, highestQ = -Infinity;
+    list.forEach(function(t){
+      var q = qualityScores[t.id] ? qualityScores[t.id].total : 0;
+      if(q > highestQ){ highestQ = q; highestQualityId = t.id; }
+    });
+    var result = {};
+    list.forEach(function(t){
+      var fee = Number(t.fee);
+      var ratio = fee / med;
+      var f, dq = false, note = null;
+      if(ratio >= 0.9 && ratio <= 1.0){
+        f = feeW;
+      } else if(ratio > 1.0){
+        f = feeW * (1 - (2/3)*(ratio - 1));
+      } else if(ratio >= 0.7 && ratio < 0.9){
+        f = feeW * (1 - (2/3)*(0.9 - ratio));
+        note = 'Below 90% of median — reduced fee score applied';
+      } else {
+        var exception = (n <= 3) || (t.id === highestQualityId);
+        if(exception){
+          f = feeW * (1 - (2/3)*(0.9 - ratio));
+          note = (n <= 3) ? 'Below 70% of median; exception applied (3 or fewer bids)' : 'Below 70% of median; exception applied (highest quality score)';
+        } else {
+          f = 0; dq = true;
+          note = 'Disqualified — fee below 70% of median with no exception';
+        }
+      }
+      f = Math.max(0, Math.min(feeW, f));
+      result[t.id] = { score: f, disqualified: dq, note: note };
+    });
+    return { scores: result, meta: { median: med } };
+  }
+
+  function computeAll(){
+    var method = determineMethod();
+    var list = conformingTenderers();
+    if(list.length === 0){
+      return { method: method, list: [], rows: [], feeMeta: null };
+    }
+    var qualityScores = computeQualityScores(list);
+    var feeResult = method.method === 'A' ? computeFeeScoresA(list) : computeFeeScoresB(list, qualityScores);
+    var rows = list.map(function(t){
+      var q = qualityScores[t.id];
+      var f = feeResult.scores[t.id];
+      var qfm = f.disqualified ? null : (q.total + f.score);
+      return {
+        id: t.id, name: t.name || '(unnamed)', fee: Number(t.fee),
+        qRaw: q.raw, qTotal: q.total,
+        fScore: f.score, disqualified: f.disqualified, note: f.note,
+        qfm: qfm
+      };
+    });
+    rows.sort(function(a,b){
+      if(a.disqualified && !b.disqualified) return 1;
+      if(!a.disqualified && b.disqualified) return -1;
+      return (b.qfm||-1) - (a.qfm||-1);
+    });
+    return { method: method, list: list, rows: rows, feeMeta: feeResult.meta };
+  }
+
+  // ---------- FRONTIER ----------
+  function computeFrontier(rows){
+    var points = rows.filter(function(r){ return !r.disqualified; }).map(function(r){
+      return { id:r.id, name:r.name, fee:r.fee, feeScore:r.fScore, quality:r.qTotal, qfm:r.qfm };
+    });
+    points.forEach(function(p){
+      p.dominated = points.some(function(o){
+        if(o.id === p.id) return false;
+        var betterOrEqualBoth = o.quality >= p.quality && o.feeScore >= p.feeScore;
+        var strictlyBetter = o.quality > p.quality || o.feeScore > p.feeScore;
+        return betterOrEqualBoth && strictlyBetter;
+      });
+    });
+    // Plot order: ascending fee score (left = lowest fee score, right = highest fee score)
+    var frontier = points.filter(function(p){ return !p.dominated; }).sort(function(a,b){ return a.feeScore - b.feeScore; });
+    // Narrative order: ascending quality (mirror of plot order on a true frontier) — keeps the
+    // "moving from cheaper to pricier costs $X more for Y points" phrasing intuitive regardless of axis choice
+    var narrative = frontier.slice().sort(function(a,b){ return a.quality - b.quality; });
+    var segments = [];
+    for(var i=0; i<narrative.length-1; i++){
+      var a = narrative[i], b = narrative[i+1];
+      var dFee = b.fee - a.fee, dQ = b.quality - a.quality;
+      segments.push({
+        from:a, to:b, dFee:dFee, dQ:dQ,
+        dollarPerPoint: dQ > 0 ? dFee/dQ : null
+      });
+    }
+    var validCosts = segments.filter(function(s){ return s.dollarPerPoint !== null; }).map(function(s){ return s.dollarPerPoint; });
+    var avgCost = validCosts.length ? validCosts.reduce(function(a,b){return a+b;},0)/validCosts.length : null;
+    return { points: points, frontier: frontier, segments: segments, avgCost: avgCost };
+  }
+
+
+  // ---------- FORMATTERS ----------
+  function fmtMoney(n){
+    if(n === null || n === undefined || isNaN(n)) return '—';
+    return Math.round(n).toLocaleString('en-SG');
+  }
+  function fmtPts(n){
+    if(n === null || n === undefined || isNaN(n)) return '—';
+    return n.toFixed(2);
+  }
+
+  // ---------- RENDER: SETUP ----------
+  function renderSetup(){
+    var costEl = document.getElementById('in-cost');
+    var standaloneEl = document.getElementById('in-standalone');
+    var stageEl = document.getElementById('in-stage');
+    var weightageEl = document.getElementById('in-weightage');
+    var customWrap = document.getElementById('custom-weightage-wrap');
+    var customQ = document.getElementById('in-quality-custom');
+
+    costEl.value = state.project.cost || '';
+    standaloneEl.value = state.project.standalone || '';
+    stageEl.value = state.project.stage || '';
+
+    if(state.project.qualityWeightage === null || state.project.qualityWeightage === ''){
+      weightageEl.value = '';
+      customWrap.style.display = 'none';
+    } else {
+      var wKey = state.project.qualityWeightage + ',' + state.project.feeWeightage;
+      var presetKeys = ['80,20','70,30','90,10'];
+      if(presetKeys.indexOf(wKey) >= 0){
+        weightageEl.value = wKey;
+        customWrap.style.display = 'none';
+      } else {
+        weightageEl.value = 'custom';
+        customWrap.style.display = 'block';
+        customQ.value = state.project.qualityWeightage;
+      }
+    }
+
+    var m = determineMethod();
+    var banner = document.getElementById('method-banner-text');
+    if(m.method === 'A'){
+      banner.innerHTML = '<strong>Standard fee-score method applies</strong> — ' + m.reason + '. Fee scores follow the average-based formula with outlier and fee-diving adjustment.';
+    } else {
+      banner.innerHTML = '<strong>Reduced Fee Score method applies</strong> — ' + m.reason + '. Fee scores are calculated against the median bid.';
+    }
+
+  }
+
+  function bindSetupEvents(){
+    document.getElementById('in-cost').addEventListener('input', function(e){
+      state.project.cost = e.target.value; save(); renderAll();
+    });
+    document.getElementById('in-standalone').addEventListener('change', function(e){
+      state.project.standalone = e.target.value; save(); renderAll();
+    });
+    document.getElementById('in-stage').addEventListener('change', function(e){
+      state.project.stage = e.target.value; save();
+    });
+    document.getElementById('in-weightage').addEventListener('change', function(e){
+      var v = e.target.value;
+      if(v === '') return;
+      if(v === 'custom'){
+        document.getElementById('custom-weightage-wrap').style.display = 'block';
+      } else {
+        var parts = v.split(',');
+        state.project.qualityWeightage = Number(parts[0]);
+        state.project.feeWeightage = Number(parts[1]);
+        document.getElementById('custom-weightage-wrap').style.display = 'none';
+        save(); renderAll();
+      }
+    });
+    document.getElementById('in-quality-custom').addEventListener('input', function(e){
+      var q = Number(e.target.value) || 0;
+      state.project.qualityWeightage = q;
+      state.project.feeWeightage = 100 - q;
+      save(); renderAll();
+    });
+  }
+
+  // ---------- RENDER: TENDERER TABLE ----------
+  function renderTenderers(){
+    var tbody = document.getElementById('tenderer-tbody');
+    tbody.innerHTML = '';
+    state.tenderers.forEach(function(t){
+      var tr = document.createElement('tr');
+      tr.innerHTML =
+        '<td class="col-name"><input type="text" data-field="name" data-id="'+t.id+'" value="'+escapeHtml(t.name)+'" placeholder="Tenderer / MDT team"></td>' +
+        '<td><input type="number" min="0" data-field="otherQuality" data-id="'+t.id+'" value="'+t.otherQuality+'" placeholder="e.g. 78.5"></td>' +
+        '<td><input type="number" min="0" step="1000" data-field="fee" data-id="'+t.id+'" value="'+t.fee+'" placeholder="e.g. 2500000"></td>' +
+        '<td style="text-align:center;"><input type="checkbox" data-field="conforming" data-id="'+t.id+'" '+(t.conforming?'checked':'')+'></td>' +
+        '<td><button class="row-remove" data-remove="'+t.id+'" title="Remove tenderer">×</button></td>';
+      tbody.appendChild(tr);
+    });
+    if(state.tenderers.length === 0){
+      var tr = document.createElement('tr');
+      tr.innerHTML = '<td colspan="5" style="padding:16px 8px;"><span class="empty" style="display:block;">No tenderers yet. Click "Add tenderer" to begin.</span></td>';
+      tbody.appendChild(tr);
+    }
+  }
+
+  function escapeHtml(s){
+    return (s||'').toString().replace(/[&<>"']/g, function(c){
+      return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];
+    });
+  }
+
+  function bindTenderEvents(){
+    document.getElementById('btn-add-row').addEventListener('click', function(){
+      state.tenderers.push(newTenderer(''));
+      save(); renderAll();
+    });
+    document.getElementById('btn-add-sample').addEventListener('click', function(){
+      state.tenderers = [
+        Object.assign(newTenderer('Team A'), { otherQuality:65, fee:2450000 }),
+        Object.assign(newTenderer('Team B'), { otherQuality:70, fee:2900000 }),
+        Object.assign(newTenderer('Team C'), { otherQuality:52, fee:2100000 }),
+        Object.assign(newTenderer('Team D'), { otherQuality:48, fee:1750000 }),
+        Object.assign(newTenderer('Team E'), { otherQuality:44, fee:1200000 }),
+        Object.assign(newTenderer('Team F'), { otherQuality:59, fee:2600000 })
+      ];
+      save(); renderAll();
+    });
+    document.getElementById('btn-clear-all').addEventListener('click', function(e){
+      var btn = e.target;
+      if(state.tenderers.length === 0) return;
+      if(btn.dataset.confirming === '1'){
+        clearTimeout(window.__clearAllTimeout);
+        btn.dataset.confirming = '';
+        btn.textContent = 'Clear all data';
+        btn.style.background = '';
+        state.tenderers = [];
+        save(); renderAll();
+        return;
+      }
+      btn.dataset.confirming = '1';
+      btn.textContent = 'Click again to confirm';
+      btn.style.background = 'var(--red-soft)';
+      window.__clearAllTimeout = setTimeout(function(){
+        btn.dataset.confirming = '';
+        btn.textContent = 'Clear all data';
+        btn.style.background = '';
+      }, 4000);
+    });
+    document.getElementById('tenderer-tbody').addEventListener('input', function(e){
+      var field = e.target.getAttribute('data-field');
+      var id = e.target.getAttribute('data-id');
+      if(!field || !id) return;
+      var t = state.tenderers.find(function(x){ return x.id === id; });
+      if(!t) return;
+      if(field === 'conforming'){ t[field] = e.target.checked; }
+      else { t[field] = e.target.value; }
+      save(); renderResultsAndFrontier();
+    });
+    document.getElementById('tenderer-tbody').addEventListener('click', function(e){
+      var rid = e.target.getAttribute('data-remove');
+      if(rid){
+        state.tenderers = state.tenderers.filter(function(t){ return t.id !== rid; });
+        save(); renderAll();
+      }
+    });
+  }
+
+  // ---------- RENDER: RESULTS ----------
+  function renderResults(computed){
+    var holder = document.getElementById('results-holder');
+    if(computed.rows.length === 0){
+      holder.innerHTML = '<div class="empty">Add at least one conforming tenderer with a fee and quality score to see results.</div>';
+      return;
+    }
+    var winnerId = null;
+    for(var i=0;i<computed.rows.length;i++){ if(!computed.rows[i].disqualified){ winnerId = computed.rows[i].id; break; } }
+
+    var html = '<table><thead><tr>' +
+      '<th>Tenderer</th><th class="num">Raw quality pts</th>' +
+      '<th class="num">Q-score</th><th class="num">Fee score</th><th class="num">QFM score</th><th>Status</th>' +
+      '</tr></thead><tbody>';
+
+    computed.rows.forEach(function(r){
+      var isWinner = r.id === winnerId;
+      html += '<tr class="results-row ' + (isWinner?'winner':'') + (r.disqualified?' dq':'') + '">' +
+        '<td>' + escapeHtml(r.name) + '</td>' +
+        '<td class="num">' + fmtPts(r.qRaw) + '</td>' +
+        '<td class="num">' + fmtPts(r.qTotal) + '</td>' +
+        '<td class="num">' + fmtPts(r.fScore) + '</td>' +
+        '<td class="num">' + (r.qfm===null?'—':fmtPts(r.qfm)) + '</td>' +
+        '<td>' + (isWinner ? '<span class="badge win">Recommended award</span>' : (r.disqualified ? '<span class="badge dq">Disqualified</span>' : '<span class="badge neutral">Ranked</span>')) +
+          (r.note ? '<div class="hint">' + escapeHtml(r.note) + '</div>' : '') +
+        '</td></tr>';
+    });
+    html += '</tbody></table>';
+
+    if(computed.feeMeta){
+      html += '<div class="hint" style="margin-top:10px;">' +
+        (computed.method.method === 'A'
+          ? 'Adjusted average fee used for scoring: S$' + fmtMoney(computed.feeMeta.adjAvg) + (computed.feeMeta.reverted ? ' (outlier exclusion reverted — too many outliers detected)' : '')
+          : 'Median fee used for scoring: S$' + fmtMoney(computed.feeMeta.median)) +
+        '</div>';
+    }
+    holder.innerHTML = html;
+  }
+
+  // ---------- RENDER: FRONTIER ----------
+  function renderFrontier(computed){
+    var holder = document.getElementById('frontier-holder');
+    var validRows = computed.rows.filter(function(r){ return !r.disqualified; });
+    if(validRows.length < 2){
+      holder.innerHTML = '<div class="empty">Frontier chart appears once at least two conforming tenderers have scores.</div>';
+      return;
+    }
+    var fr = computeFrontier(computed.rows);
+    var winnerId = computed.rows.filter(function(r){return !r.disqualified;})[0].id;
+
+    // chart geometry
+    var W = 640, H = 380, padL = 70, padR = 30, padT = 20, padB = 50;
+    var feeScores = fr.points.map(function(p){return p.feeScore;});
+    var quals = fr.points.map(function(p){return p.quality;});
+    var minFS = Math.min.apply(null, feeScores), maxFS = Math.max.apply(null, feeScores);
+    var minQ = Math.min.apply(null, quals), maxQ = Math.max.apply(null, quals);
+    var fsRange = (maxFS - minFS) || 1, qRange = (maxQ - minQ) || 1;
+    var fsPad = fsRange * 0.12, qPad = qRange * 0.15;
+    minFS -= fsPad; maxFS += fsPad; minQ -= qPad; maxQ += qPad;
+    if(minQ < 0) minQ = 0;
+    if(minFS < 0) minFS = 0;
+
+    function xPix(feeScore){ return padL + ((feeScore - minFS)/(maxFS-minFS)) * (W - padL - padR); }
+    function yPix(q){ return H - padB - ((q - minQ)/(maxQ-minQ)) * (H - padT - padB); }
+
+    var svg = '<svg viewBox="0 0 '+W+' '+H+'" width="100%" style="max-width:640px;">';
+
+    // blueprint grid
+    svg += '<g stroke="#D6DBD2" stroke-width="0.5" stroke-dasharray="2,3">';
+    for(var gx=0; gx<=8; gx++){
+      var xg = padL + gx*(W-padL-padR)/8;
+      svg += '<line x1="'+xg+'" y1="'+padT+'" x2="'+xg+'" y2="'+(H-padB)+'"/>';
+    }
+    for(var gy=0; gy<=6; gy++){
+      var yg = padT + gy*(H-padT-padB)/6;
+      svg += '<line x1="'+padL+'" y1="'+yg+'" x2="'+(W-padR)+'" y2="'+yg+'"/>';
+    }
+    svg += '</g>';
+
+    // axes
+    svg += '<line x1="'+padL+'" y1="'+(H-padB)+'" x2="'+(W-padR)+'" y2="'+(H-padB)+'" stroke="#4B5A52" stroke-width="1"/>';
+    svg += '<line x1="'+padL+'" y1="'+padT+'" x2="'+padL+'" y2="'+(H-padB)+'" stroke="#4B5A52" stroke-width="1"/>';
+    svg += '<text x="'+(padL + (W-padL-padR)/2)+'" y="'+(H-14)+'" text-anchor="middle" font-family="IBM Plex Mono" font-size="10.5" fill="#4B5A52">Fee score</text>';
+    svg += '<text x="18" y="'+(padT+(H-padT-padB)/2)+'" text-anchor="middle" font-family="IBM Plex Mono" font-size="10.5" fill="#4B5A52" transform="rotate(-90 18 '+(padT+(H-padT-padB)/2)+')">Q-score</text>';
+
+    // frontier line
+    if(fr.frontier.length > 1){
+      var linePts = fr.frontier.map(function(p){ return xPix(p.feeScore)+','+yPix(p.quality); }).join(' ');
+      svg += '<polyline points="'+linePts+'" fill="none" stroke="#14524A" stroke-width="1.5" stroke-dasharray="5,3"/>';
+    }
+
+    // points
+    fr.points.forEach(function(p){
+      var cx = xPix(p.feeScore), cy = yPix(p.quality);
+      var isFrontier = fr.frontier.some(function(f){return f.id===p.id;});
+      var isWinner = p.id === winnerId;
+      var fill = isWinner ? '#9A6B22' : (isFrontier ? '#14524A' : '#B9C2B4');
+      var r = isWinner ? 6 : 5;
+      svg += '<circle cx="'+cx+'" cy="'+cy+'" r="'+r+'" fill="'+fill+'" stroke="#fff" stroke-width="1.5"/>';
+      svg += '<text x="'+(cx+9)+'" y="'+(cy+4)+'" font-family="IBM Plex Sans" font-size="11" fill="#16211C">'+escapeHtml(p.name)+'</text>';
+    });
+
+    svg += '</svg>';
+
+    // commentary
+    var winnerRow = computed.rows.find(function(r){ return r.id === winnerId; });
+    var commentary = '<div class="commentary"><h3>Trade-off notes</h3>';
+
+    // 1. On the frontier
+    if(fr.frontier.length){
+      var frontierNames = fr.frontier.map(function(p){ return escapeHtml(p.name); }).join(', ');
+      commentary += '<div class="comment-item value"><strong>On the efficient frontier:</strong> ' + frontierNames + '.<br>Meaning: None of these is beaten on <em>both</em> price and quality by another bid — each is either the cheapest bid for its quality level, or the highest quality for its price. These are the only bids worth comparing on value for money.</div>';
+    }
+
+    // 2. Off the frontier (dominated) — distinct from formal BCA disqualification
+    var offFrontier = fr.points.filter(function(p){ return p.dominated; });
+    if(offFrontier.length){
+      var items = offFrontier.map(function(p){
+        var dominator = fr.points.find(function(o){
+          return o.id !== p.id && o.quality >= p.quality && o.feeScore >= p.feeScore;
+        });
+        return escapeHtml(p.name) + (dominator ? ' (beaten by ' + escapeHtml(dominator.name) + ' — equal or better quality at an equal or better fee score)' : '');
+      }).join('; ');
+      commentary += '<div class="comment-item dominated"><strong>Not on the frontier:</strong> ' + items + '.<br>These are not formally disqualified under BCA rules — this is a value-for-money observation only. A more efficient option exists for each, so they are unlikely to represent the best trade-off.</div>';
+    }
+
+    // 3. Trade-offs along the frontier
+    fr.segments.forEach(function(s){
+      if(s.dollarPerPoint === null) return;
+      var steep = fr.avgCost && s.dollarPerPoint > fr.avgCost * 1.4;
+      var cls = steep ? 'steep' : '';
+      commentary += '<div class="comment-item ' + cls + '">Moving from <span class="figure">' + escapeHtml(s.from.name) + '</span> to <span class="figure">' + escapeHtml(s.to.name) + '</span> costs S$' + fmtMoney(s.dFee) + ' more for ' + fmtPts(s.dQ) + ' additional quality points — <span class="figure">S$' + fmtMoney(s.dollarPerPoint) + ' per point</span>.' + (steep ? ' Notably steeper than the average step — diminishing returns beyond this point.' : '') + '</div>';
+    });
+
+    // 4. Recommendation
+    if(fr.frontier.length && winnerRow){
+      var winnerOnFrontier = fr.frontier.some(function(f){ return f.id === winnerId; });
+      var recText;
+      if(winnerOnFrontier){
+        recText = '<strong>' + escapeHtml(winnerRow.name) + '</strong> is both the top QFM scorer and on the efficient frontier — no cheaper bid matches its quality, and no higher-quality bid costs less. It is the strongest choice on both compliance and value-for-money grounds.';
+      } else {
+        recText = '<strong>' + escapeHtml(winnerRow.name) + '</strong> scores highest under QFM but is not itself on the efficient frontier, meaning a cheaper or higher-quality alternative exists on paper. QFM remains the formal basis for award, but this discrepancy is worth flagging to the panel with a brief explanation.';
+      }
+      var steepSeg = fr.segments.find(function(s){ return fr.avgCost && s.dollarPerPoint !== null && s.dollarPerPoint > fr.avgCost * 1.4; });
+      var elbow = steepSeg ? steepSeg.from : (fr.frontier.length ? fr.frontier[fr.frontier.length-1] : null);
+      if(elbow && elbow.id !== winnerId){
+        recText += ' If the panel prioritises cost efficiency over maximum quality, <strong>' + escapeHtml(elbow.name) + '</strong> sits just before cost per additional quality point rises sharply — a reasonable value-conscious alternative to note alongside the QFM result.';
+      }
+      commentary += '<div class="comment-item"><strong>Suggestion:</strong> ' + recText + '<div class="hint" style="margin-top:6px;">This is an automated value-for-money observation, not a substitute for the formal QFM ranking or panel judgement.</div></div>';
+    }
+
+    commentary += '</div>';
+
+    holder.innerHTML = '<div class="chart-wrap"><div class="chart-svg-holder">' + svg + '</div>' + commentary + '</div>';
+  }
+
+  // ---------- EXPORT ----------
+  function exportCsv(){
+    var computed = computeAll();
+    var lines = [];
+    lines.push(['Fee-score method', computed.method.method === 'A' ? 'Standard' : 'Reduced Fee Score']);
+    if(lines.length) lines.push([]);
+    lines.push(['Tenderer','Raw Quality Points','Q-score','Proposed Fee','Fee Score','QFM Score','Status','Note']);
+    computed.rows.forEach(function(r){
+      lines.push([r.name, fmtPts(r.qRaw), fmtPts(r.qTotal), r.fee, fmtPts(r.fScore), r.qfm===null?'':fmtPts(r.qfm), r.disqualified?'Disqualified':'Ranked', r.note||'']);
+    });
+    var csv = lines.map(function(row){
+      return row.map(function(cell){
+        var s = String(cell);
+        if(s.indexOf(',') >= 0 || s.indexOf('"') >= 0){ s = '"' + s.replace(/"/g,'""') + '"'; }
+        return s;
+      }).join(',');
+    }).join('\n');
+    var blob = new Blob([csv], {type:'text/csv;charset=utf-8;'});
+    var url = URL.createObjectURL(blob);
+    var a = document.createElement('a');
+    a.href = url; a.download = 'qfm-tender-evaluation.csv';
+    document.body.appendChild(a); a.click(); document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  }
+
+  // ---------- MAIN RENDER ----------
+  function renderResultsAndFrontier(){
+    var computed = computeAll();
+    renderResults(computed);
+    renderFrontier(computed);
+    renderSetup();
+  }
+  function renderAll(){
+    renderSetup();
+    renderTenderers();
+    renderResultsAndFrontier();
+  }
+
+  // ---------- ERROR VISIBILITY ----------
+  function showErrorBanner(msg){
+    var el = document.getElementById('js-error-banner');
+    if(!el){
+      el = document.createElement('div');
+      el.id = 'js-error-banner';
+      el.style.cssText = 'position:fixed; top:0; left:0; right:0; z-index:9999; background:#8F2E22; color:#fff; padding:10px 14px; font-family:sans-serif; font-size:13px;';
+      document.body.insertBefore(el, document.body.firstChild);
+    }
+    el.textContent = 'Something went wrong loading this tool: ' + msg + ' — try reloading the page.';
+  }
+  window.addEventListener('error', function(e){
+    showErrorBanner(e.message || 'unknown error');
+  });
+
+  // ---------- INIT ----------
+  try{
+    load();
+    bindSetupEvents();
+    bindTenderEvents();
+    document.getElementById('btn-export-csv').addEventListener('click', exportCsv);
+    document.getElementById('btn-print').addEventListener('click', function(){ window.print(); });
+    renderAll();
+  }catch(err){
+    showErrorBanner(err.message || String(err));
+  }
+})();
+</script>
+</body>
+</html>
